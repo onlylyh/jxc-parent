@@ -9,6 +9,7 @@ import pojos.Result;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.security.Principal;
 
 
 /**
@@ -27,28 +28,13 @@ public class UserController {
     private IUserService userService;
 
     /**
-     * 用户登录
-     * @param username
-     * @param password
-     * @return
-     */
-    @PostMapping("login")
-    public Result login(String username, String password, HttpSession session){
-        User user = userService.userLogin(username,password);
-        session.setAttribute("user",user);
-        return new Result(true,"用户登录成功！",user);
-    }
-
-    /**
      * 用户信息修改
      * @param
      * @return
      */
     @PostMapping("update")
-    public Result update(User user, HttpSession session){
-        User sessionUser = (User) session.getAttribute("user");
-        userService.infoUpdate(user,sessionUser.getId());
-        session.setAttribute("user",user);
+    public Result update(User user, Principal principal){
+        userService.infoUpdate(user,principal.getName());
         return new Result(true,"修改成功！",user);
     }
 
@@ -60,11 +46,12 @@ public class UserController {
      * @return
      */
     @PostMapping("pwdUpdate")
-    public Result pwdUpdate(String oldPwd,String newPwd,String confirmPwd,HttpSession session){
-        User user = (User) session.getAttribute("user");
-        userService.pwdUpdate(oldPwd,newPwd,confirmPwd,user.getUsername());
+    public Result pwdUpdate(Principal principal, String oldPwd, String newPwd, String confirmPwd, HttpSession session){
+        userService.pwdUpdate(oldPwd,newPwd,confirmPwd,principal.getName());
         session.removeAttribute("user");
-        return new Result(true,"修改成功！");
+        return new Result(true,"用户密码更新成功！！");
     }
+
+    
 
 }

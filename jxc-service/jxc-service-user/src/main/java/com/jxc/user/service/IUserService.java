@@ -13,15 +13,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IUserService extends IService<User> {
 
-    /**
-     * 用户登录方法
-     * @return
-     */
-    User userLogin(String username,String password);
-
     User findByUsername(String username);
 
-    void infoUpdate(User user,Integer id);
+    void infoUpdate(User user,String username);
 
     void pwdUpdate(String oldPwd, String newPwd, String confirmPwd,String username);
 }

@@ -6,9 +6,12 @@ import com.jxc.user.mapper.UserMapper;
 import com.jxc.user.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+
+import javax.annotation.Resource;
 
 /**
  * <p>
@@ -21,20 +24,8 @@ import org.springframework.util.Assert;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
-    @Override
-    public User userLogin(String username, String password) {
-        /**
-         * 用户名不为空 密码不为空
-         * 根据用户名查找返回的对象不为Null
-         * 密码比对正确
-         */
-        Assert.isTrue(StringUtils.isNotEmpty(username),"用户名不能为空");
-        Assert.isTrue(StringUtils.isNotEmpty(password),"密码不能为空");
-        User user = this.findByUsername(username);
-        Assert.isTrue(user!=null,"用户名不存在或已注销！");
-        Assert.isTrue(user.getPassword().equals(password),"密码错误");
-        return user;
-    }
+    @Resource
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public User findByUsername(String username) {
@@ -43,14 +34,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     @Transactional
-    public void infoUpdate(User user,Integer id) {
+    public void infoUpdate(User user,String username) {
         /**
          * 用户名 非空
          * 真实姓名非空
          */
         Assert.isTrue(StringUtils.isNotEmpty(user.getUsername()),"用户名不能为空！");
         Assert.isTrue(StringUtils.isNotEmpty(user.getTrueName()),"真实姓名不能为空！");
-        user.setId(id);
+        User oldUser = this.findByUsername(username);
+        Assert.isTrue(oldUser!=null,"用户不存在！");
+        user.setId(oldUser.getId());
         this.baseMapper.updateById(user);
     }
 
@@ -67,8 +60,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         Assert.isTrue(newPwd.equals(confirmPwd),"新密码与确认密码不一致！");
         Assert.isTrue(!oldPwd.equals(newPwd),"旧密码与新密码不能相同！");
         User user = this.findByUsername(username);
-        Assert.isTrue(user.getPassword().equals(oldPwd),"密码不正确！");
-        user.setPassword(newPwd);
+        Assert.isTrue(passwordEncoder.matches(oldPwd,user.getPassword()),"原始密码不正确！");
+        user.setPassword(passwordEncoder.encode(newPwd));
         this.baseMapper.updateById(user);
     }
 }
