@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -50,8 +51,11 @@ public class User implements Serializable, UserDetails {
     private String remark;
 
     @TableField(exist = false)
-    Collection<? extends GrantedAuthority> authorities;
+    private Collection<? extends GrantedAuthority> authorities;
 
+    //当前用户具备哪些角色
+    @TableField(exist = false)
+    private List<Integer> roleIds;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

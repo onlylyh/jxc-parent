@@ -4,15 +4,18 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jxc.user.entity.User;
+import com.jxc.user.entity.UserRole;
 import com.jxc.user.mapper.UserMapper;
 import com.jxc.user.query.UserQuery;
 import com.jxc.user.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.jxc.user.service.UserRoleService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import utils.PageResultUtils;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -34,8 +37,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Resource
     private PasswordEncoder passwordEncoder;
 
+    @Resource
+    private UserRoleService userRoleService;
+
     @Override
     public User findByUsername(String username) {
+
         return this.baseMapper.selectOne(new QueryWrapper<User>().eq("is_del",0).eq("username",username));
     }
 
@@ -81,15 +88,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             queryWrapper.like("username",userQuery.getUsername());
         }
         IPage<User> iPage = this.baseMapper.selectPage(page, queryWrapper);
-
-        Map<String,Object> map = new HashMap<>();
-        map.put("data",iPage.getRecords());
-        map.put("count",iPage.getTotal());
-        return map;
+        return PageResultUtils.getPageResult(iPage.getTotal(),iPage.getRecords());
     }
 
     @Override
-    public void saveUser(User user) {
+    public void saveUser(User user,Integer[] roleIds) {
         /**
          * 用户名
          *      非空 唯一
@@ -101,10 +104,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         user.setPassword(passwordEncoder.encode("123456"));
         user.setIsDel(0);
         Assert.isTrue(this.save(user),"用户添加失败！");
+        /**
+         * 给用户分配角色
+         */
+        User user1 = this.findByUsername(user.getUsername());
+        distributeRole(user1.getId(),roleIds);
+    }
+    //分配用户角色
+    private void distributeRole(Integer userId, Integer[] roleIds) {
+        /**
+         * 查询用户角色关联表
+         * 用户是否存在原始角色，存在则删除重新添加
+         * 不存在则直接批量添加
+         */
+        QueryWrapper<UserRole> queryWrapper = new QueryWrapper<UserRole>().eq("user_id", userId);
+        int count = userRoleService.count(queryWrapper);
+        if (count>0){
+            userRoleService.remove(queryWrapper);
+        }
+        if (roleIds!=null&&roleIds.length>0){
+            for (Integer roleId : roleIds) {
+                UserRole userRole = new UserRole();
+                userRole.setUserId(userId);
+                userRole.setRoleId(roleId);
+                Assert.isTrue(userRoleService.save(userRole),"角色添加失败！");
+            }
+        }
     }
 
     @Override
-    public void updateUser(User user) {
+    public void updateUser(User user,Integer[] roleIds) {
         /**
          * 用户名 非空 不可重复
          */
@@ -112,6 +141,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         User temp = this.findByUsername(user.getUsername());
         Assert.isTrue(!(temp!=null&&!(user.getId().equals(temp.getId()))),"用户名已存在！");
         Assert.isTrue(this.updateById(user),"用户信息修改失败！");
+
+        distributeRole(user.getId(),roleIds);
     }
 
     @Override

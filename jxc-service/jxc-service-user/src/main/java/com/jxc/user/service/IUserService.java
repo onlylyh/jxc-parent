@@ -25,9 +25,9 @@ public interface IUserService extends IService<User> {
 
     Map<String,Object> userList(UserQuery userQuery);
 
-    void saveUser(User user);
+    void saveUser(User user,Integer[] roleIds);
 
-    void updateUser(User user);
+    void updateUser(User user,Integer[] roleIds);
 
     void deleteUser(Integer[] ids);
 }

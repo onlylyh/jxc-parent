@@ -69,8 +69,8 @@ public class UserController {
      * @return
      */
     @PostMapping("saveUser")
-    public Result saveUser(User user){
-        userService.saveUser(user);
+    public Result saveUser(User user,Integer[] roleIds){
+        userService.saveUser(user,roleIds);
         return new Result(true,"用户添加成功！");
     }
 
@@ -80,8 +80,8 @@ public class UserController {
      * @return
      */
     @PostMapping("updateUser")
-    public Result updateUser(User user){
-        userService.updateUser(user);
+    public Result updateUser(User user,Integer[] roleIds){
+        userService.updateUser(user,roleIds);
         return new Result(true,"用户更新成功！");
     }
 
