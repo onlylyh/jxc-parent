@@ -2,6 +2,7 @@ package com.jxc.user.controller;
 
 
 import com.jxc.user.entity.User;
+import com.jxc.user.query.UserQuery;
 import com.jxc.user.service.IUserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,6 +53,49 @@ public class UserController {
         return new Result(true,"用户密码更新成功！！");
     }
 
-    
+    /**
+     * 用户列表数据
+     * @param userQuery
+     * @return
+     */
+    @GetMapping("list")
+    public Result list(UserQuery userQuery){
+        return new Result(true,"用户列表数据查询成功",userService.userList(userQuery));
+    }
+
+    /**
+     * 用户记录添加接口
+     * @param user
+     * @return
+     */
+    @PostMapping("saveUser")
+    public Result saveUser(User user){
+        userService.saveUser(user);
+        return new Result(true,"用户添加成功！");
+    }
+
+    /**
+     * 用户记录更新
+     * @param user
+     * @return
+     */
+    @PostMapping("updateUser")
+    public Result updateUser(User user){
+        userService.updateUser(user);
+        return new Result(true,"用户更新成功！");
+    }
+
+    /**
+     * 用户记录删除
+     * @param ids
+     * @return
+     */
+    @GetMapping("delete")
+    public Result delete(Integer[] ids){
+        userService.deleteUser(ids);
+        return new Result(true,"用户记录删除成功！");
+    }
+
+
 
 }

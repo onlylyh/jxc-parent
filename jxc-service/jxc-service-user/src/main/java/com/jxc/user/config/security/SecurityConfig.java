@@ -52,26 +52,43 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable()
                 //验证码过滤器
                 //.addFilterBefore(cacptcnaController, UsernamePasswordAuthenticationFilter.class)
+                //禁用frame
                 .headers().frameOptions().disable()
             .and()
+                //开启表单登录
                 .formLogin()
                 .usernameParameter("username")
                 .passwordParameter("password")
+                //登录请求处理地址
                 .loginProcessingUrl("/login")
+                //自定义登录页面
+                //.loginPage("/index")
+                //登录成功处理器 继承savedRequestAwareAuthenticationSuccessHandler
                 .successHandler(authenticationSuccessHandler)
+                //登录失败处理器 继承simpleUrlAuthenticationFailureHandler
                 .failureHandler(authenticationFailureHandler)
             .and()
+                //开启用户退出
                 .logout()
+                //退出处理url
                 .logoutUrl("/logout")
+                //删除用户cookie
                 .deleteCookies("JSESSIONID")
+                //退出成功处理器 实现LogoutSuccessHandler
                 .logoutSuccessHandler(jxcLogoutSuccessHandler)
             .and()
+                //开启记住我
                 .rememberMe()
+                //记住我功能参数
                 .rememberMeParameter("rememberMe")
+                //往客户端写入的token名 与数据库persistent_logins相关联
                 .rememberMeCookieName("remember-me-cookie")
+                //有效时间
                 .tokenValiditySeconds(7*24*60*60)
+                //令牌存放位置
                 .tokenRepository(persistentTokenRepository())
             .and()
+                //放行的请求
                 .authorizeRequests().antMatchers("/login").permitAll()
                 .anyRequest().authenticated();
     }
@@ -87,6 +104,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return tokenRepository;
     }
 
+    /**
+     * 告诉框架当前登录用户信息数据库查询信息
+     * @return
+     */
     @Bean
     public UserDetailsService userDetailsService(){
         return new UserDetailsService() {
@@ -98,11 +119,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         };
     }
 
+    /**
+     * 创建BCrypt密码加密对象
+     * @return
+     */
     @Bean
     public PasswordEncoder encoder(){
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * 传递用户信息和密码加密对象
+     * @param auth
+     * @throws Exception
+     */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService()).passwordEncoder(encoder());

@@ -1,8 +1,11 @@
 package com.jxc.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jxc.user.entity.User;
 import com.jxc.user.mapper.UserMapper;
+import com.jxc.user.query.UserQuery;
 import com.jxc.user.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
@@ -12,6 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -63,5 +70,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         Assert.isTrue(passwordEncoder.matches(oldPwd,user.getPassword()),"原始密码不正确！");
         user.setPassword(passwordEncoder.encode(newPwd));
         this.baseMapper.updateById(user);
+    }
+
+    @Override
+    public Map<String,Object> userList(UserQuery userQuery) {
+        IPage<User> page = new Page<User>(userQuery.getPage(),userQuery.getLimit());
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("is_del",0);
+        if (StringUtils.isNotEmpty(userQuery.getUsername())) {
+            queryWrapper.like("username",userQuery.getUsername());
+        }
+        IPage<User> iPage = this.baseMapper.selectPage(page, queryWrapper);
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("data",iPage.getRecords());
+        map.put("count",iPage.getTotal());
+        return map;
+    }
+
+    @Override
+    public void saveUser(User user) {
+        /**
+         * 用户名
+         *      非空 唯一
+         * 密码默认值123456
+         * 用户默认未删除
+         */
+        Assert.isTrue(StringUtils.isNotEmpty(user.getUsername()),"用户名不能为空！");
+        Assert.isTrue(this.findByUsername(user.getUsername())==null,"用户名已存在！");
+        user.setPassword(passwordEncoder.encode("123456"));
+        user.setIsDel(0);
+        Assert.isTrue(this.save(user),"用户添加失败！");
+    }
+
+    @Override
+    public void updateUser(User user) {
+        /**
+         * 用户名 非空 不可重复
+         */
+        Assert.isTrue(StringUtils.isNotEmpty(user.getUsername()),"用户名不能为空！");
+        User temp = this.findByUsername(user.getUsername());
+        Assert.isTrue(!(temp!=null&&!(user.getId().equals(temp.getId()))),"用户名已存在！");
+        Assert.isTrue(this.updateById(user),"用户信息修改失败！");
+    }
+
+    @Override
+    public void deleteUser(Integer[] ids) {
+        Assert.isTrue(ids!=null&&ids.length>0,"请选择要删除的用户id！");
+        List<User> users = new ArrayList<User>();
+        for (Integer id : ids) {
+            User user = this.getById(id);
+            user.setIsDel(1);
+            users.add(user);
+        }
+        Assert.isTrue(this.updateBatchById(users),"用户删除成功！");
     }
 }

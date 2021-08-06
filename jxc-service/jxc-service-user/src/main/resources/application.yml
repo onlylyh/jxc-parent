@@ -8,3 +8,14 @@ spring:
     url: jdbc:mysql://127.0.0.1/jxc_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
     username: root
     password: root
+mybatis-plus:
+  #配置mybatis映射文件
+  mapper-locations: classpath*:/mapper/*Mapper.xml
+  #配置mybatis数据返回类型别名（默认是类名）
+  type-aliases-package: com.jxc.user.entity
+  configuration:
+    #自动驼峰命名
+    map-underscore-to-camel-case: true
+logging:
+  level:
+    com.jxc.user.mapper: debug
